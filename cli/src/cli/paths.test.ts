@@ -1,4 +1,4 @@
-import { pathBasename, pathDirname, splitPathSegments } from './paths';
+import { appendRemotePath, pathBasename, pathDirname, splitPathSegments } from './paths';
 
 describe('pathDirname', () => {
     it('returns the parent path with slashes re-escaped in segment names', () => {
@@ -27,5 +27,11 @@ describe('splitPathSegments', () => {
 
     it('leaves a trailing backslash literal when not escaping', () => {
         expect(splitPathSegments('/my-files/foo\\')).toEqual(['', 'my-files', 'foo\\']);
+    });
+});
+
+describe('appendRemotePath', () => {
+    it('escapes literal slashes in a node name', () => {
+        expect(appendRemotePath('/my-files/folder', 'foo/bar')).toBe('/my-files/folder/foo\\/bar');
     });
 });

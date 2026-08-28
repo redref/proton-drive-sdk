@@ -16,6 +16,7 @@ import {
     printIterable,
     sanitizeTerminalText,
 } from '../../cli';
+import { iterateRemoteTree, RemoteTreeEntry } from './remoteTree';
 
 export class CommandFileSystemList implements Command {
     group = 'filesystem';
@@ -23,6 +24,12 @@ export class CommandFileSystemList implements Command {
     help = 'Use / to list top-level sections. Your root folder is /my-files.';
     args = ['path'];
     options: Options = {
+        recursive: {
+            type: 'boolean',
+            short: 'r',
+            default: false,
+            help: 'List all descendants of a Drive folder.',
+        },
         type: {
             type: 'string',
             short: 't',
@@ -32,12 +39,17 @@ export class CommandFileSystemList implements Command {
         },
     };
 
-    async action({ sdk, photosSdk, paths, args: [pathString], options: { json, type } }: ActionArgs) {
+    async action({ sdk, photosSdk, paths, args: [pathString], options: { json, recursive, type } }: ActionArgs) {
         const path = paths.getPath(pathString);
 
         const nodeType = type ? Object.entries(NodeType).find(([, value]) => value === type)?.[1] : undefined;
         if (type && !nodeType) {
             throw new ValidationError(`Invalid node type: ${type}`);
+        }
+
+        if (recursive) {
+            await this.printDescendants(sdk, paths, path, pathString, { json, nodeType });
+            return;
         }
 
         switch (path.type) {
@@ -118,6 +130,45 @@ export class CommandFileSystemList implements Command {
         await printIterable(childrenIterator, options.json, (node) => this.printNodeHuman(node));
     }
 
+    private async printDescendants(
+        sdk: ProtonDriveClient,
+        paths: Paths,
+        path: { type: PathType; fullPath: string },
+        pathString: string,
+        options: { json: boolean; nodeType?: NodeType },
+    ) {
+        const supportedTypes = [PathType.MyFiles, PathType.Devices, PathType.SharedWithMe];
+        const isVirtualRoot =
+            path.fullPath === `/${PathType.Devices}` || path.fullPath === `/${PathType.SharedWithMe}`;
+        if (!supportedTypes.includes(path.type) || isVirtualRoot) {
+            throw new ValidationError(`Recursive listing is not supported for path "${pathString}"`);
+        }
+
+        const rootNode = await paths.getNode(pathString);
+        if (rootNode.type !== NodeType.Folder) {
+            throw new ValidationError('Recursive listing requires a folder path');
+        }
+
+        const entries = this.filterByType(iterateRemoteTree(sdk, rootNode, path.fullPath), options.nodeType);
+        await printIterable(
+            entries,
+            options.json,
+            (entry) => this.printTreeEntryHuman(entry),
+            (entry) => entry,
+        );
+    }
+
+    private async *filterByType(
+        entries: AsyncIterable<RemoteTreeEntry>,
+        nodeType?: NodeType,
+    ): AsyncGenerator<RemoteTreeEntry> {
+        for await (const entry of entries) {
+            if (!nodeType || entry.node.type === nodeType) {
+                yield entry;
+            }
+        }
+    }
+
     private async printSharedNodes(sdk: ProtonDriveClient | ProtonDrivePhotosClient, options: { json: boolean }) {
         await printIterable(sdk.iterateSharedNodes(), options.json, (node) => this.printNodeHuman(node));
     }
@@ -131,6 +182,14 @@ export class CommandFileSystemList implements Command {
     }
 
     private printNodeHuman(node: NodeEntity): void {
+        console.log(sanitizeTerminalText(this.formatNodeHuman(node)));
+    }
+
+    private printTreeEntryHuman(entry: RemoteTreeEntry): void {
+        console.log(sanitizeTerminalText(`${'  '.repeat(entry.depth)}${this.formatNodeHuman(entry.node)}`));
+    }
+
+    private formatNodeHuman(node: NodeEntity): string {
         const type = node.type === 'file' ? '📄' : '🗂️';
         const sharedFlag = node.isShared ? '🔗' : '  '; // Two spaces to align with the shared icon.
         const permissionFlag = formatMemberRole(node.directRole);
@@ -139,7 +198,7 @@ export class CommandFileSystemList implements Command {
         const claimedSize = getClaimedSize(node);
         const size = claimedSize ? formatSize(claimedSize, true) : '-';
         const name = getName(node);
-        console.log(sanitizeTerminalText(`${type}${sharedFlag}${permissionFlag} ${author} ${created} ${size} ${name}`));
+        return `${type}${sharedFlag}${permissionFlag} ${author} ${created} ${size} ${name}`;
     }
 
     private printDeviceHuman(device: Device): void {

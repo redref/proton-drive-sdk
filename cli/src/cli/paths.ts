@@ -426,6 +426,13 @@ export function pathBasename(fullPath: string): string {
     return segments[segments.length - 1] ?? '';
 }
 
+/** Appends a node name to a virtual Drive path, escaping literal slashes in the name. */
+export function appendRemotePath(parentPath: string, name: string): string {
+    const normalizedParent = parentPath === PATH.sep ? PATH.sep : parentPath.replace(/\/+$/, '');
+    const escapedName = name.replaceAll('/', '\\/');
+    return normalizedParent === PATH.sep ? `${PATH.sep}${escapedName}` : `${normalizedParent}${PATH.sep}${escapedName}`;
+}
+
 /**
  * Split a remote path into segments. Unescaped `/` separates segments; `\/` is literal `/`.
  */

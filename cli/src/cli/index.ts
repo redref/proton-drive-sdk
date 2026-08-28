@@ -17,7 +17,7 @@ export {
 export type { ActionArgs, Command, Options } from './interface';
 export { findName, getClaimedSize, getName } from './node';
 export { openBrowserUrl } from './openBrowserUrl';
-export { Path, Paths, PathType } from './paths';
+export { appendRemotePath, Path, Paths, PathType } from './paths';
 export { readPasswordLine } from './readPasswordLine';
 export { applyDefaultCliOptions } from './registryCore';
 export type { CliSession } from './run';
