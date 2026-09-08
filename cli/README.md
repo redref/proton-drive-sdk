@@ -61,6 +61,7 @@ After a successful login, the CLI stores the session in the **OS secret store** 
 ```bash
 ./release/proton-drive filesystem list /my-files
 ./release/proton-drive filesystem list /my-files/projects --recursive
+./release/proton-drive filesystem sync ./local-folder /my-files/backup --dry-run
 ./release/proton-drive filesystem upload ./local-folder /my-files/parent
 ./release/proton-drive sharing status /my-files/shared-folder
 ```

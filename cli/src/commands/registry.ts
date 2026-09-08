@@ -12,6 +12,7 @@ import { CommandFileSystemMove } from './fileSystem/commandFileSystemMove';
 import { CommandFileSystemRename } from './fileSystem/commandFileSystemRename';
 import { CommandFileSystemRestore } from './fileSystem/commandFileSystemRestore';
 import { CommandFileSystemSize } from './fileSystem/commandFileSystemSize';
+import { CommandFileSystemSync } from './fileSystem/commandFileSystemSync';
 import { CommandFileSystemTrash } from './fileSystem/commandFileSystemTrash';
 import { CommandFileSystemUpload } from './fileSystem/commandFileSystemUpload';
 import { CommandAlbumAddPhoto } from './photos/commandAlbumAddPhoto';
@@ -44,6 +45,7 @@ export const COMMANDS = applyDefaultCliOptions([
     new CommandFileSystemSize(),
     new CommandFileSystemCreateFolder(),
     new CommandFileSystemUpload(),
+    new CommandFileSystemSync(),
     new CommandFileSystemDownload(),
     new CommandFileSystemRename(),
     new CommandFileSystemCopy(),

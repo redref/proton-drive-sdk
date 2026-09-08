@@ -18,7 +18,7 @@ export class TransferSummary {
     private queuedCount = 0;
     private readonly failures: TransferFailure[] = [];
 
-    constructor(private readonly operation: 'upload' | 'download') {}
+    constructor(private readonly operation: 'upload' | 'download' | 'sync') {}
 
     get failureCount(): number {
         return this.failures.length;
@@ -43,7 +43,7 @@ export class TransferSummary {
     }
 
     formatProgressLine(): string {
-        const verb = this.operation === 'upload' ? 'Uploaded' : 'Downloaded';
+        const verb = this.operation === 'upload' ? 'Uploaded' : this.operation === 'download' ? 'Downloaded' : 'Synced';
         const parts = [`${verb} ${this.successCount}`];
         if (this.failures.length > 0) {
             parts.push(`Failed ${this.failures.length}`);
@@ -71,7 +71,7 @@ export class TransferSummary {
 
         console.log('Transfer summary:');
 
-        const verb = this.operation === 'upload' ? 'Uploaded' : 'Downloaded';
+        const verb = this.operation === 'upload' ? 'Uploaded' : this.operation === 'download' ? 'Downloaded' : 'Synced';
         console.log(`  ${verb}: ${this.successCount} items (${formatSize(this.transferredBytes, true)})`);
 
         if (this.skipped.length > 0) {

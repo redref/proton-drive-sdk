@@ -40,6 +40,10 @@ describe('TransferSummary', () => {
         uploadSummary.recordFailure('bad.txt', new Error('network error'));
         uploadSummary.setQueuedCount(1);
         expect(uploadSummary.formatProgressLine()).toBe('Uploaded 1 | Failed 1 | Queued 1');
+
+        const syncSummary = new TransferSummary('sync');
+        syncSummary.recordSuccess();
+        expect(syncSummary.formatProgressLine()).toBe('Synced 1 | Queued 0');
     });
 
     it('includes skipped only when there are skipped items', () => {
